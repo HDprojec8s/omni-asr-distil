@@ -49,17 +49,13 @@ from typing_extensions import override
 
 from .dataset_config import Wav2Vec2AsrDatasetSelector, Wav2Vec2AsrDatasetSection
 
-from omnilingual_asr.workflows.recipes.wav2vec2.asr.wer_calculator import (
-    CerMetric,
-    WerCalculator,
-)
-
 from .data import register_distill_datasets
 from .distill_criterion import DistillCriterion
 from .distill_train_unit import DistillTrainUnit
 from .hidden_extractor import HiddenStateExtractor
 from .losses import DistillationLoss
 from .streaming import DynamicChunkBias
+from .wer_utils import CerMetric, compute_wer_cer
 from .student_config import register_student_configs
 from .student_factory import (
     apply_streaming_bias,
@@ -379,11 +375,9 @@ class DistillRecipe(TrainRecipe):
                 projection_layers=proj_dict,
             )
 
-            wer_calculator = WerCalculator.from_context(context)
-
             for split in valid_splits:
                 valid_unit = DistillEvalUnit(
-                    valid_criterion, context.model, wer_calculator
+                    valid_criterion, context.model, context.default_tokenizer
                 )
                 valid_units.append(valid_unit)
 
@@ -425,17 +419,22 @@ class DistillEvalUnit(EvalUnit[Seq2SeqBatch]):
 
     _criterion: DistillCriterion
     _model: RecipeModel
-    _wer_calculator: WerCalculator
+    _text_decoder: object  # TokenDecoder
+    _pad_idx: int
 
     def __init__(
         self,
         criterion: DistillCriterion,
         model: RecipeModel,
-        wer_calculator: WerCalculator,
+        tokenizer: object,
     ) -> None:
+        from fairseq2.data.tokenizers import Tokenizer as Tok
+
         self._criterion = criterion
         self._model = model
-        self._wer_calculator = wer_calculator
+        tok = cast(Tok, tokenizer)
+        self._text_decoder = tok.create_decoder(skip_special_tokens=True)
+        self._pad_idx = tok.vocab_info.pad_idx or 1
 
     @override
     def prepare_metric_bag(self, metric_bag: MetricBag) -> None:
@@ -448,21 +447,18 @@ class DistillEvalUnit(EvalUnit[Seq2SeqBatch]):
         _, _, student_logits, student_logits_layout = self._criterion(
             batch, metric_bag
         )
-        self._wer_calculator.compute_wer(
+        compute_wer_cer(
             batch,
             student_logits,
             student_logits_layout,
-            None,   # context_logits (LLM only)
-            None,   # context_logit_layout (LLM only)
-            [],     # audio_embeddings (LLM only)
+            self._text_decoder,
             metric_bag,
-            None,   # llama_beam_search (greedy CTC decoding)
+            pad_idx=self._pad_idx,
         )
 
     @override
     def process_metric_values(self, values: MutableMapping[str, object]) -> None:
         self._criterion.process_metric_values(values)
-        self._wer_calculator.process_metric_values(values)
 
     @property
     @override
