@@ -45,12 +45,7 @@ from fairseq2.recipe.model import RecipeModel
 from fairseq2.recipe.trainer import Trainer
 from typing_extensions import override
 
-from omnilingual_asr.workflows.recipes.wav2vec2.asr.dataset_selector import (
-    Wav2Vec2AsrDatasetSelector,
-)
-from omnilingual_asr.workflows.recipes.wav2vec2.asr.default_config import (
-    Wav2Vec2AsrDatasetSection,
-)
+from .dataset_config import Wav2Vec2AsrDatasetSelector, Wav2Vec2AsrDatasetSection
 
 from .data import register_distill_datasets
 from .distill_criterion import DistillCriterion
