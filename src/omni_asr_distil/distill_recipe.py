@@ -18,7 +18,8 @@ from torch.nn import Linear, ModuleDict
 
 from fairseq2.datasets import Seq2SeqBatch, SyncMode
 from fairseq2.logging import log
-from fairseq2.metrics import MetricBag
+from fairseq2.metrics import MetricBag, format_as_float
+from fairseq2.metrics.recorders import MetricDescriptor
 from fairseq2.models.wav2vec2.asr.model import Wav2Vec2AsrModel
 from fairseq2.nn.utils.module import freeze_parameters, share_parameters
 from fairseq2.recipe.base import RecipeContext, TrainRecipe
@@ -192,6 +193,18 @@ class DistillRecipe(TrainRecipe):
     def register(self, container) -> None:
         register_distill_datasets(container)
         register_student_configs(container)
+
+        # Register distillation metric descriptors so the trainer
+        # can use them as score_metric for checkpointing.
+        for name, display in [
+            ("distill_loss",    "Distill Loss"),
+            ("kd_logit_loss",   "KD Logit Loss"),
+            ("hid_cosine_loss", "Hidden Cosine Loss"),
+        ]:
+            container.collection.register_instance(
+                MetricDescriptor,
+                MetricDescriptor(name, display, 100, format_as_float),
+            )
 
     @override
     def prepare_model(self, context: RecipeContext, model: RecipeModel) -> RecipeModel:
