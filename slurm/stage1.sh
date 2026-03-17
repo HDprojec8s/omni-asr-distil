@@ -74,7 +74,7 @@ echo "=================================================================="
 # --- Launch training (background, so trap can fire) ---
 python scripts/run_stage1.py "$OUTPUT_DIR" \
     --config-file "${CONFIG_FILE}" \
-    --dataset.asr_task_config.max_num_elements="${MAX_NUM_ELEMENTS}" \
-    --trainer.grad_accumulation.num_batches="${NUM_BATCHES}" &
+    --config dataset.asr_task_config.max_num_elements="${MAX_NUM_ELEMENTS}" \
+              trainer.grad_accumulation.num_batches="${NUM_BATCHES}" &
 TRAIN_PID=$!
 wait "$TRAIN_PID"
