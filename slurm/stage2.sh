@@ -15,9 +15,19 @@
 #SBATCH --signal=B:USR1@120
 
 # --- Arguments ---
-CONFIG_FILE=${1:?Usage: sbatch stage2.sh <config.yaml>}
+CONFIG_FILE=${1:?Usage: sbatch stage2.sh <config.yaml> [--resume]}
+RESUME=${2:-""}
 CONFIG_NAME=$(basename "$CONFIG_FILE" .yaml)
 OUTPUT_DIR="/nfs1/scratch/students/witzlch88229/output/distil-stage2/${CONFIG_NAME}"
+
+# --- Resume check ---
+if [ "$RESUME" = "--resume" ]; then
+    echo "Resume mode: will continue from last checkpoint in ${OUTPUT_DIR}"
+elif [ -d "${OUTPUT_DIR}" ] && ls "${OUTPUT_DIR}"/step_* &>/dev/null; then
+    echo "ERROR: Output directory ${OUTPUT_DIR} already contains checkpoints."
+    echo "Use '--resume' as second argument to continue training, or remove the directory."
+    exit 1
+fi
 
 # --- GPU-aware batch sizing ---
 # Scale max_num_elements to GPU VRAM; adjust grad accumulation to keep
@@ -49,8 +59,6 @@ cleanup() {
         kill -USR1 "$TRAIN_PID"
         wait "$TRAIN_PID"
     fi
-    echo "$(date): Requeueing job $SLURM_JOB_ID"
-    scontrol requeue "$SLURM_JOB_ID"
 }
 trap cleanup USR1
 

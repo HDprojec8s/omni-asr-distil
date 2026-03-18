@@ -91,12 +91,13 @@ def compute_wer_cer(
     refs = [text_decoder(s) for s in ref_seqs]
     hyps = [text_decoder(s) for s in hyp_seqs]
 
+    _, ref_layout = batch.as_target_input()
     metric_bag.get("wer", WerMetric).update(
         refs,
-        ref_seqs.cpu().tolist(),
-        batch.as_target_input()[1],  # ref layout
+        ref_seqs.cpu(),
+        ref_layout,
         hyps,
-        hyp_seqs.cpu().tolist(),
+        hyp_seqs.cpu(),
         hyp_layout,
     )
     metric_bag.get("cer", CerMetric).update(refs, hyps)
