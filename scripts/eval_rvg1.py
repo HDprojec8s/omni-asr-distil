@@ -18,7 +18,6 @@ from pathlib import Path
 import editdistance
 import torch
 
-from fairseq2.assets import default_asset_store
 from fairseq2.data.tokenizers import load_tokenizer
 from fairseq2.models.wav2vec2.asr.config import Wav2Vec2AsrConfig
 from fairseq2.models.wav2vec2.asr.factory import Wav2Vec2AsrFactory
