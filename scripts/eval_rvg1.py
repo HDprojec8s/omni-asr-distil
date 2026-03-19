@@ -69,9 +69,10 @@ def load_model(
     factory = Wav2Vec2AsrFactory(config)
     model = factory.create_model()
 
-    model_path = checkpoint_dir / "model.pt"
+    # fairseq2 distributed checkpoint format: model/pp_00/tp_00/sdp_00.pt
+    model_path = checkpoint_dir / "model" / "pp_00" / "tp_00" / "sdp_00.pt"
     state_dict = torch.load(model_path, map_location=device, weights_only=True)
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict["model"])
     model.to(device)
     model.eval()
     return model
