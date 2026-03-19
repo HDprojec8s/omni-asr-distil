@@ -118,15 +118,14 @@ def main() -> None:
     # --- Load dataset ---
     from omnilingual_asr.datasets.impl.mixture_parquet_asr_dataset import (
         MixtureParquetAsrDataset,
-        MixtureParquetAsrDatasetConfig,
     )
     from omnilingual_asr.datasets.storage.mixture_parquet_storage import (
         MixtureParquetStorageConfig,
     )
     from omnilingual_asr.datasets.tasks.asr_task import AsrTaskConfig
-    from fairseq2.gang import FakeGang
+    from fairseq2.gang import create_fake_gangs
 
-    gang = FakeGang(device=device)
+    gangs = create_fake_gangs(device)
 
     storage_config = MixtureParquetStorageConfig(
         dataset_summary_path=str(
@@ -141,13 +140,12 @@ def main() -> None:
         batch_shuffle_window=1,
     )
 
-    dataset_config = MixtureParquetAsrDatasetConfig(name="rvg1_de")
-    dataset = MixtureParquetAsrDataset(dataset_config)
+    dataset = MixtureParquetAsrDataset(path=DATASET_PATH)
 
     data_reader = dataset.create_reader(
         split=args.split,
         tokenizer=tokenizer,
-        gangs=gang,
+        gangs=gangs,
         dtype=torch.bfloat16,
         num_accumulate=1,
         storage_config=storage_config,
