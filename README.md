@@ -90,14 +90,17 @@ omni-asr-distil/
 │   ├── distill_train_unit.py    # DistillTrainUnit (extends TrainUnit)
 │   ├── hidden_extractor.py      # Hook-based hidden state extraction
 │   ├── streaming.py             # DynamicChunkBias (AttentionBias)
+│   ├── wer_utils.py             # WER/CER metrics + greedy CTC decode
 │   └── data.py                  # Reuse MIXTURE_PARQUET datasets
 ├── scripts/
 │   ├── run_stage1.py            # Stage 1 entry point
 │   ├── run_stage2.py            # Stage 2 entry point
-│   └── evaluate.py              # WER evaluation
+│   ├── evaluate.py              # WER evaluation (fairseq2 recipe)
+│   └── eval_rvg1.py             # BAS-RVG1 eval with per-sample CSV
 └── slurm/
-    ├── stage1.sh                # SLURM job (preemptible, auto-resume)
-    └── stage2.sh
+    ├── stage1.sh                # Training (preemptible, auto-resume)
+    ├── stage2.sh
+    └── eval_rvg1.sh             # BAS-RVG1 evaluation
 ```
 
 ## Setup
@@ -113,30 +116,34 @@ pip install -e .
 ### Stage 1: Size Reduction
 
 ```bash
-# Local
-python scripts/run_stage1.py /path/to/output \
-    --config-file configs/stage1/s_medium_384.yaml
-
-# SLURM
+# Fresh start (aborts if checkpoints exist)
 sbatch slurm/stage1.sh configs/stage1/s_medium_384.yaml
+
+# Resume from last checkpoint
+sbatch slurm/stage1.sh configs/stage1/s_medium_384.yaml --resume
 ```
+
+Batch sizing is GPU & model-aware — the script auto-detects the partition (p4/H200, p2/A100-80, p1/A100-40) and adjusts `max_num_elements` and gradient accumulation to keep effective batch size constant. Smaller models get larger batches on constrained GPUs.
+
+Preemption is handled automatically: USR1 signal triggers a checkpoint save, `--requeue` restarts the job, and `SLURM_RESTART_COUNT` bypasses the checkpoint guard. wandb runs persist across restarts via `run_id: persistent`.
 
 ### Stage 2: Streaming Conversion
 
 ```bash
-# Local (set teacher.name to Stage 1 checkpoint)
-python scripts/run_stage2.py /path/to/output \
-    --config-file configs/stage2/stream_dct.yaml
-
-# SLURM
 sbatch slurm/stage2.sh configs/stage2/stream_dct.yaml
+
+# Resume
+sbatch slurm/stage2.sh configs/stage2/stream_dct.yaml --resume
 ```
 
-### Evaluation
+### Evaluation: BAS-RVG1
 
 ```bash
-python scripts/evaluate.py /path/to/output \
-    --config-file configs/eval.yaml
+# Auto-finds latest checkpoint for the architecture
+sbatch slurm/eval_rvg1.sh distill_s_small test
+
+# Output: <checkpoint_dir>/eval_rvg1_test.csv
+# Columns: reference, hypothesis, wer, cer
 ```
 
 ## Key Design Decisions
