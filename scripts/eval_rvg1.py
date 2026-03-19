@@ -123,7 +123,7 @@ def main() -> None:
     from omnilingual_asr.datasets.storage.mixture_parquet_storage import (
         MixtureParquetStorageConfig,
     )
-    from omnilingual_asr.datasets.asr_task import AsrTaskConfig
+    from omnilingual_asr.datasets.tasks.asr_task import AsrTaskConfig
     from fairseq2.gang import FakeGang
 
     gang = FakeGang(device=device)
