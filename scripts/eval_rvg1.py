@@ -138,6 +138,7 @@ def main() -> None:
         max_num_elements=15_360_000,
         normalize_audio=True,
         batch_shuffle_window=1,
+        example_shuffle_window=1,  # 1 = no shuffling (eval)
     )
 
     dataset = MixtureParquetAsrDataset(path=DATASET_PATH)
