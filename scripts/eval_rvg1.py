@@ -73,7 +73,7 @@ def load_model(
     model_path = checkpoint_dir / "model" / "pp_00" / "tp_00" / "sdp_00.pt"
     state_dict = torch.load(model_path, map_location=device, weights_only=True)
     model.load_state_dict(state_dict)
-    model.to(device=device, dtype=torch.bfloat16)
+    model.to(device=device)
     model.eval()
     return model
 
@@ -147,7 +147,7 @@ def main() -> None:
         split=args.split,
         tokenizer=tokenizer,
         gangs=gangs,
-        dtype=torch.bfloat16,
+        dtype=torch.float32,
         num_accumulate=1,
         storage_config=storage_config,
         task_config=task_config,
