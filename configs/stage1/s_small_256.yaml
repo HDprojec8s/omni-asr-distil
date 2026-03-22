@@ -61,7 +61,6 @@ common:
       enabled: true
       project: "omni-asr-distil"
       run_name: "stage1-s_small-256"
-      run_id: "persistent"
     tensorboard:
       enabled: false
 
