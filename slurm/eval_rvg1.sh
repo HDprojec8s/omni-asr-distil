@@ -12,8 +12,9 @@
 #SBATCH --qos=basic
 
 # --- Arguments ---
-ARCH=${1:?Usage: sbatch eval_rvg1.sh <arch> [split]}
+ARCH=${1:?Usage: sbatch eval_rvg1.sh <arch> [split] [dataset_path]}
 SPLIT=${2:-"test"}
+DATASET=${3:-""}
 
 # --- Setup ---
 cd /nfs1/scratch/students/witzlch88229/projects/omni-asr-distil || { echo "Directory not found"; exit 1; }
@@ -24,11 +25,17 @@ PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/conda' | paste -sd ':')"
 
 source .venv/bin/activate
 
+DATASET_ARGS=""
+if [ -n "${DATASET}" ]; then
+    DATASET_ARGS="--dataset ${DATASET}"
+fi
+
 echo "=================================================================="
-echo "BAS-RVG1 Evaluation at $(date)"
+echo "ASR Evaluation at $(date)"
 echo "Arch:      ${ARCH}"
 echo "Split:     ${SPLIT}"
+echo "Dataset:   ${DATASET:-rvg1_de (default)}"
 echo "Partition: ${SLURM_JOB_PARTITION}"
 echo "=================================================================="
 
-python scripts/eval_rvg1.py --arch "${ARCH}" --split "${SPLIT}"
+python scripts/eval_rvg1.py --arch "${ARCH}" --split "${SPLIT}" ${DATASET_ARGS}

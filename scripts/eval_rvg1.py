@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Evaluate a distilled Stage 1 model on BAS-RVG1.
+"""Evaluate a distilled Stage 1 model on a parquet ASR dataset.
 
 Automatically finds the latest checkpoint for the given architecture,
 runs greedy CTC decoding on the specified split, and writes a CSV with
@@ -7,6 +7,7 @@ per-sample reference, hypothesis, WER, and CER.
 
 Usage:
     python scripts/eval_rvg1.py --arch distill_s_small --split test
+    python scripts/eval_rvg1.py --arch distill_s_small --dataset /path/to/dataset/version=0 --split dev
 """
 
 from __future__ import annotations
@@ -29,9 +30,11 @@ from omni_asr_distil.wer_utils import greedy_ctc_decode
 
 OUTPUT_BASE = Path("/nfs1/scratch/students/witzlch88229/output/distil-stage1")
 
-DATASET_PATH = Path(
+DEFAULT_DATASET = Path(
     "/nfs1/scratch/students/witzlch88229/data/omni-asr-ft/rvg1_de/version=0"
 )
+
+DATA_BASE = Path("/nfs1/scratch/students/witzlch88229/data/omni-asr-ft")
 
 TOKENIZER_NAME = "omniASR_tokenizer_written_v2"
 
@@ -93,15 +96,22 @@ def sample_cer(ref: str, hyp: str) -> float:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate distilled model on BAS-RVG1")
+    parser = argparse.ArgumentParser(description="Evaluate distilled model on ASR dataset")
     parser.add_argument("--arch", required=True, choices=ARCH_MAP.keys())
     parser.add_argument("--split", default="test")
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=DEFAULT_DATASET,
+        help="Path to parquet dataset (default: rvg1_de)",
+    )
     parser.add_argument(
         "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
     args = parser.parse_args()
 
     device = torch.device(args.device)
+    dataset_path = args.dataset
 
     # --- Find and load checkpoint ---
     checkpoint_dir = find_latest_checkpoint(args.arch)
@@ -129,7 +139,7 @@ def main() -> None:
 
     storage_config = MixtureParquetStorageConfig(
         dataset_summary_path=str(
-            DATASET_PATH.parent / "language_distribution_0.tsv"
+            dataset_path.parent / "language_distribution_0.tsv"
         ),
     )
     task_config = AsrTaskConfig(
@@ -141,7 +151,7 @@ def main() -> None:
         example_shuffle_window=1,  # 1 = no shuffling (eval)
     )
 
-    dataset = MixtureParquetAsrDataset(path=DATASET_PATH)
+    dataset = MixtureParquetAsrDataset(path=dataset_path)
 
     data_reader = dataset.create_reader(
         split=args.split,
@@ -154,7 +164,8 @@ def main() -> None:
     )
 
     # --- Evaluate ---
-    output_csv = checkpoint_dir / f"eval_rvg1_{args.split}.csv"
+    dataset_name = dataset_path.parent.name  # e.g. "rvg1_de" from ".../rvg1_de/version=0"
+    output_csv = checkpoint_dir / f"eval_{dataset_name}_{args.split}.csv"
 
     total_word_err = 0
     total_word_len = 0

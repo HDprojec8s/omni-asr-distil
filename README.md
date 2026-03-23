@@ -136,13 +136,16 @@ sbatch slurm/stage2.sh configs/stage2/stream_dct.yaml
 sbatch slurm/stage2.sh configs/stage2/stream_dct.yaml --resume
 ```
 
-### Evaluation: BAS-RVG1
+### Evaluation
 
 ```bash
-# Auto-finds latest checkpoint for the architecture
+# BAS-RVG1 (default dataset)
 sbatch slurm/eval_rvg1.sh distill_s_small test
 
-# Output: <checkpoint_dir>/eval_rvg1_test.csv
+# Custom dataset
+sbatch slurm/eval_rvg1.sh distill_s_small test /path/to/dataset/version=0
+
+# Output: <checkpoint_dir>/eval_<dataset>_<split>.csv
 # Columns: reference, hypothesis, wer, cer
 ```
 
