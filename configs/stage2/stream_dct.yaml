@@ -21,7 +21,7 @@ dataset:
     beta_corpus: 0.5
     beta_language: 0.5
     fragment_loading:
-      cache: true
+      cache: false
   asr_task_config:
     min_audio_len: 32_000
     max_audio_len: 960_000
