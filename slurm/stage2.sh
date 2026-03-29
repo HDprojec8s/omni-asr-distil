@@ -111,6 +111,7 @@ TRAIN_CMD="scripts/run_stage2.py $OUTPUT_DIR \
 
 if [ "$NUM_GPUS" -gt 1 ]; then
     torchrun --nproc_per_node="${NUM_GPUS}" \
+        --start_method=spawn \
         --master_addr="$(hostname)" \
         --master_port=29500 \
         ${TRAIN_CMD} &
