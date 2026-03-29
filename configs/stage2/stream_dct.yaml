@@ -77,8 +77,8 @@ common:
 
 regime:
   num_steps: 20_000
-  validate_after_n_steps: 2_000
-  validate_every_n_steps: 1_000
+  validate_after_n_steps: 500
+  validate_every_n_steps: 200
   checkpoint_every_n_steps: 2_000
   publish_metrics_every_n_steps: 100
   save_model_only: false
