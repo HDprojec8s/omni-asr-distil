@@ -2,11 +2,12 @@
 # Lower latency target: 32 frames at 10ms stride
 
 model:
-  name: ""
+  family: "wav2vec2_asr"
   arch: "distill_s_medium"
 
 teacher:
-  name: ""  # Stage 1 checkpoint path
+  family: "wav2vec2_asr"
+  arch: "distill_s_medium"
 
 dataset:
   name: "cv_swc_rvg1_de"

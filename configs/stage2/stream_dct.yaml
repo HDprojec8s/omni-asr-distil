@@ -4,11 +4,12 @@
 # Chunk sizes sampled randomly: {16, 24, 32, 48, 64, ∞}
 
 model:
-  name: ""  # Will be loaded from Stage 1 checkpoint
+  family: "wav2vec2_asr"
   arch: "distill_s_medium"
 
 teacher:
-  name: ""  # Stage 1 checkpoint path (set via CLI or override)
+  family: "wav2vec2_asr"
+  arch: "distill_s_medium"
 
 dataset:
   name: "cv_swc_rvg1_de"

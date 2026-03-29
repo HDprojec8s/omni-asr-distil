@@ -12,14 +12,26 @@
 #SBATCH --signal=B:USR1@120
 
 # --- Arguments ---
-# Usage: sbatch [--gres=gpu:N --ntasks-per-node=N] slurm/stage2.sh <config.yaml> [--resume]
-CONFIG_FILE=${1:?Usage: sbatch slurm/stage2.sh <config.yaml> [--resume]}
-RESUME=${2:-""}
+# Usage: sbatch [--gres=gpu:N --ntasks-per-node=N] slurm/stage2.sh <config.yaml> <stage1_config> [--resume]
+# Example: sbatch --gres=gpu:4 --ntasks-per-node=4 slurm/stage2.sh configs/stage2/stream_dct.yaml s_medium_384
+CONFIG_FILE=${1:?Usage: sbatch slurm/stage2.sh <config.yaml> <stage1_config> [--resume]}
+STAGE1_CONFIG=${2:?Usage: sbatch slurm/stage2.sh <config.yaml> <stage1_config> [--resume]}
+RESUME=${3:-""}
 CONFIG_NAME=$(basename "$CONFIG_FILE" .yaml)
 OUTPUT_DIR="/nfs1/scratch/students/witzlch88229/output/distil-stage2/${CONFIG_NAME}"
+STAGE1_OUTPUT="/nfs1/scratch/students/witzlch88229/output/distil-stage1/${STAGE1_CONFIG}"
 
 # Detect GPU count from SLURM allocation
 NUM_GPUS=${SLURM_NTASKS_PER_NODE:-1}
+
+# --- Find latest Stage 1 checkpoint ---
+STAGE1_CHECKPOINT=$(ls -d "${STAGE1_OUTPUT}"/ws_*/checkpoints/step_* 2>/dev/null | sort -t_ -k2 -n | tail -1)
+if [ -z "$STAGE1_CHECKPOINT" ]; then
+    echo "ERROR: No Stage 1 checkpoint found in ${STAGE1_OUTPUT}/ws_*/checkpoints/step_*"
+    exit 1
+fi
+STAGE1_MODEL="${STAGE1_CHECKPOINT}/model"
+echo "Stage 1 checkpoint: ${STAGE1_MODEL}"
 
 # --- Resume check ---
 # Auto-resume on Slurm requeue (preemption) or explicit --resume flag.
@@ -27,7 +39,7 @@ if [ "$RESUME" = "--resume" ] || [ "${SLURM_RESTART_COUNT:-0}" -gt 0 ]; then
     echo "Resume mode (restart_count=${SLURM_RESTART_COUNT:-0}): continuing from last checkpoint in ${OUTPUT_DIR}"
 elif [ -d "${OUTPUT_DIR}" ] && ls "${OUTPUT_DIR}"/ws_*/checkpoints/step_* &>/dev/null; then
     echo "ERROR: Output directory ${OUTPUT_DIR} already contains checkpoints."
-    echo "Use '--resume' as second argument to continue training, or remove the directory."
+    echo "Use '--resume' as third argument to continue training, or remove the directory."
     exit 1
 fi
 
@@ -81,6 +93,7 @@ echo "=================================================================="
 echo "Starting Stage 2 Streaming Distillation at $(date)"
 echo "Job submitted to partition ${SLURM_JOB_PARTITION} on ${SLURM_CLUSTER_NAME}"
 echo "Config: ${CONFIG_FILE}"
+echo "Stage 1: ${STAGE1_MODEL}"
 echo "Output: ${OUTPUT_DIR}"
 echo "GPUs: ${NUM_GPUS} | max_num_elements: ${MAX_NUM_ELEMENTS} | grad_accum: ${NUM_BATCHES}"
 echo "=================================================================="
@@ -88,7 +101,9 @@ echo "=================================================================="
 # --- Launch training (background, so trap can fire) ---
 TRAIN_CMD="scripts/run_stage2.py $OUTPUT_DIR \
     --config-file ${CONFIG_FILE} \
-    --config dataset.asr_task_config.max_num_elements=${MAX_NUM_ELEMENTS} \
+    --config model.path=${STAGE1_MODEL} \
+              teacher.path=${STAGE1_MODEL} \
+              dataset.asr_task_config.max_num_elements=${MAX_NUM_ELEMENTS} \
               trainer.grad_accumulation.num_batches=${NUM_BATCHES}"
 
 if [ "$NUM_GPUS" -gt 1 ]; then
