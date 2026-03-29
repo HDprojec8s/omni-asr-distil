@@ -87,6 +87,9 @@ mkdir -p "$TMPDIR"
 unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL
 PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/conda' | paste -sd ':')"
 
+export TQDM_MONITOR_INTERVAL=0   # Disable tqdm monitor thread (fork-safety with torchrun)
+export PYTHONNOUSERSITE=1        # Prevent anaconda site-packages contamination
+
 source .venv/bin/activate
 
 echo "=================================================================="
