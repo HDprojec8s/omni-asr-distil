@@ -47,8 +47,13 @@ ARCH_MAP: dict[str, tuple[str, Wav2Vec2AsrConfig]] = {
 
 def find_latest_checkpoint(arch: str, output_base: Path | None = None) -> Path:
     """Find the highest step_* checkpoint across all ws_* workspaces."""
-    config_name = ARCH_MAP[arch][0]
-    output_dir = (output_base or OUTPUT_BASE) / config_name
+    if output_base is not None:
+        # Explicit output dir (e.g. stage2): search directly, no arch subdirectory
+        output_dir = output_base
+    else:
+        # Default (stage1): append arch config name as subdirectory
+        config_name = ARCH_MAP[arch][0]
+        output_dir = OUTPUT_BASE / config_name
 
     # fairseq2 stores checkpoints in ws_*/checkpoints/step_*/
     step_dirs = sorted(
