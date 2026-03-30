@@ -84,12 +84,19 @@ mkdir -p logs
 export TMPDIR="/nfs1/scratch/students/witzlch88229/tmp/${SLURM_JOB_ID}"
 mkdir -p "$TMPDIR"
 
-unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL
-unset PYTHONPATH PYTHONHOME
-PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/conda\|/anaconda' | paste -sd ':')"
-LD_LIBRARY_PATH="$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '/conda\|/anaconda' | paste -sd ':')"
-
-source .venv/bin/activate
+# --- Environment activation ---
+# Multi-GPU requires conda (venv has anaconda/stdlib conflicts that cause GIL crashes).
+# Single-GPU uses venv.
+if [ "$NUM_GPUS" -gt 1 ]; then
+    eval "$(conda shell.bash hook 2>/dev/null)"
+    conda activate omni-distil
+else
+    unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL
+    unset PYTHONPATH PYTHONHOME
+    PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/conda\|/anaconda' | paste -sd ':')"
+    LD_LIBRARY_PATH="$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '/conda\|/anaconda' | paste -sd ':')"
+    source .venv/bin/activate
+fi
 
 echo "=================================================================="
 echo "Starting Stage 2 Streaming Distillation at $(date)"
@@ -98,14 +105,13 @@ echo "Config: ${CONFIG_FILE}"
 echo "Stage 1: ${STAGE1_MODEL}"
 echo "Output: ${OUTPUT_DIR}"
 echo "GPUs: ${NUM_GPUS} | max_num_elements: ${MAX_NUM_ELEMENTS} | grad_accum: ${NUM_BATCHES}"
+echo "Python: $(which python)"
 echo "=================================================================="
 
 # --- Launch training (background, so trap can fire) ---
-# Use torchrun for multi-GPU (sets RANK/WORLD_SIZE/LOCAL_RANK automatically).
-# common.cluster=none disables fairseq2's SlurmHandler (which breaks NCCL
-# by restricting CUDA_VISIBLE_DEVICES to one GPU per process).
-# tqdm TMonitor is patched in run_stage2.py to prevent GIL crash.
 if [ "$NUM_GPUS" -gt 1 ]; then
+    # torchrun for multi-GPU. common.cluster=none disables fairseq2's SlurmHandler
+    # (which restricts CUDA_VISIBLE_DEVICES and breaks NCCL).
     torchrun --nproc_per_node="${NUM_GPUS}" \
         scripts/run_stage2.py "$OUTPUT_DIR" \
         --config-file "${CONFIG_FILE}" \
