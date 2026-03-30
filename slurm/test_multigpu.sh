@@ -4,6 +4,7 @@
 #SBATCH --error=logs/test-mgpu_%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:2
 #SBATCH --partition=p4
 #SBATCH --time=0:05:00
