@@ -93,6 +93,7 @@ if [ "$NUM_GPUS" -gt 1 ]; then
     unset VIRTUAL_ENV
     eval "$(conda shell.bash hook 2>/dev/null)"
     conda activate omni-distil
+    export PYTHONNOUSERSITE=1  # Ignore ~/.local/lib to use conda packages only
     echo "Using conda: $(which python) $(which torchrun)"
 else
     unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL
