@@ -6,10 +6,11 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=p4,p2,p1
+#SBATCH --time=20:00:00
 #SBATCH --cpus-per-task=12
 #SBATCH --mem-per-cpu=40G
 #SBATCH --gres=gpu:1
-#SBATCH --qos=preemptible
+#SBATCH --qos=gpuultimate
 #SBATCH --requeue
 #SBATCH --signal=B:USR1@120
 
