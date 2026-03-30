@@ -12,9 +12,10 @@
 #SBATCH --qos=basic
 
 # --- Arguments ---
-ARCH=${1:?Usage: sbatch eval_rvg1.sh <arch> [split] [dataset_path]}
+ARCH=${1:?Usage: sbatch eval_rvg1.sh <arch> [split] [dataset_path] [output_dir]}
 SPLIT=${2:-"test"}
 DATASET=${3:-""}
+OUTPUT_DIR_OVERRIDE=${4:-""}
 
 # --- Setup ---
 cd /nfs1/scratch/students/witzlch88229/projects/omni-asr-distil || { echo "Directory not found"; exit 1; }
@@ -30,9 +31,12 @@ LD_LIBRARY_PATH="$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '/conda\|/ana
 
 source .venv/bin/activate
 
-DATASET_ARGS=""
+EXTRA_ARGS=""
 if [ -n "${DATASET}" ]; then
-    DATASET_ARGS="--dataset ${DATASET}"
+    EXTRA_ARGS="--dataset ${DATASET}"
+fi
+if [ -n "${OUTPUT_DIR_OVERRIDE}" ]; then
+    EXTRA_ARGS="${EXTRA_ARGS} --output-dir ${OUTPUT_DIR_OVERRIDE}"
 fi
 
 echo "=================================================================="
@@ -43,4 +47,4 @@ echo "Dataset:   ${DATASET:-rvg1_de (default)}"
 echo "Partition: ${SLURM_JOB_PARTITION}"
 echo "=================================================================="
 
-python scripts/eval_rvg1.py --arch "${ARCH}" --split "${SPLIT}" ${DATASET_ARGS}
+python scripts/eval_rvg1.py --arch "${ARCH}" --split "${SPLIT}" ${EXTRA_ARGS}

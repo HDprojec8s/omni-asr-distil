@@ -45,10 +45,10 @@ ARCH_MAP: dict[str, tuple[str, Wav2Vec2AsrConfig]] = {
 }
 
 
-def find_latest_checkpoint(arch: str) -> Path:
+def find_latest_checkpoint(arch: str, output_base: Path | None = None) -> Path:
     """Find the highest step_* checkpoint across all ws_* workspaces."""
     config_name = ARCH_MAP[arch][0]
-    output_dir = OUTPUT_BASE / config_name
+    output_dir = (output_base or OUTPUT_BASE) / config_name
 
     # fairseq2 stores checkpoints in ws_*/checkpoints/step_*/
     step_dirs = sorted(
@@ -106,6 +106,12 @@ def main() -> None:
         help="Path to parquet dataset (default: rvg1_de)",
     )
     parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Output base dir to search for checkpoints (default: distil-stage1)",
+    )
+    parser.add_argument(
         "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
     args = parser.parse_args()
@@ -114,7 +120,7 @@ def main() -> None:
     dataset_path = args.dataset
 
     # --- Find and load checkpoint ---
-    checkpoint_dir = find_latest_checkpoint(args.arch)
+    checkpoint_dir = find_latest_checkpoint(args.arch, args.output_dir)
     print(f"Checkpoint: {checkpoint_dir}")
 
     model = load_model(args.arch, checkpoint_dir, device)
