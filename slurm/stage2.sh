@@ -88,8 +88,12 @@ mkdir -p "$TMPDIR"
 # Multi-GPU requires conda (venv has anaconda/stdlib conflicts that cause GIL crashes).
 # Single-GPU uses venv.
 if [ "$NUM_GPUS" -gt 1 ]; then
+    # Remove any venv from PATH before activating conda
+    PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '\.venv' | paste -sd ':')"
+    unset VIRTUAL_ENV
     eval "$(conda shell.bash hook 2>/dev/null)"
     conda activate omni-distil
+    echo "Using conda: $(which python) $(which torchrun)"
 else
     unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL
     unset PYTHONPATH PYTHONHOME
