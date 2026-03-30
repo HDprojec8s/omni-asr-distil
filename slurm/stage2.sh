@@ -12,8 +12,8 @@
 #SBATCH --signal=B:USR1@120
 
 # --- Arguments ---
-# Usage: sbatch [--gres=gpu:N --ntasks-per-node=N] slurm/stage2.sh <config.yaml> <stage1_config> [--resume]
-# Example: sbatch --gres=gpu:4 --ntasks-per-node=4 slurm/stage2.sh configs/stage2/stream_dct.yaml s_medium_384
+# Usage: sbatch [--gpus-per-node=N --ntasks-per-node=N] slurm/stage2.sh <config.yaml> <stage1_config> [--resume]
+# Example: sbatch --gpus-per-node=4 --ntasks-per-node=4 slurm/stage2.sh configs/stage2/stream_dct_large.yaml s_large_512
 CONFIG_FILE=${1:?Usage: sbatch slurm/stage2.sh <config.yaml> <stage1_config> [--resume]}
 STAGE1_CONFIG=${2:?Usage: sbatch slurm/stage2.sh <config.yaml> <stage1_config> [--resume]}
 RESUME=${3:-""}
