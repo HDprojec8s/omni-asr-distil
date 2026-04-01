@@ -69,7 +69,7 @@ streaming:
 common:
   metric_recorders:
     wandb:
-      enabled: true
+      enabled: false
       project: "omni-asr-distil"
       run_name: "stage2-dct-s_large"
     tensorboard:

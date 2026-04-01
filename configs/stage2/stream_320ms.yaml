@@ -65,7 +65,7 @@ streaming:
 common:
   metric_recorders:
     wandb:
-      enabled: true
+      enabled: false
       project: "omni-asr-distil"
       run_name: "stage2-320ms-s_medium"
     tensorboard:

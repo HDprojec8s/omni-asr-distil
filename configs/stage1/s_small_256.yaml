@@ -58,7 +58,7 @@ layer_mapping_strategy: "double_plus_one"
 common:
   metric_recorders:
     wandb:
-      enabled: true
+      enabled: false
       project: "omni-asr-distil"
       run_name: "stage1-s_small-256"
     tensorboard:
