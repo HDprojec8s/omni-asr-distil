@@ -12,6 +12,8 @@ STAGE2_OUTPUT="/nfs1/scratch/students/witzlch88229/output/distil-stage2"
 CONFIGS=(
     "stream_dct_large:distill_s_large"
     "stream_dct:distill_s_medium"
+    "stream_320ms:distill_s_medium"
+    "stream_480ms:distill_s_medium"
 )
 
 COUNT=0

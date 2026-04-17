@@ -149,10 +149,20 @@ sbatch slurm/eval_rvg1.sh distill_s_small test /path/to/dataset/version=0
 # Columns: reference, hypothesis, wer, cer
 ```
 
+Für Stage-2-Checkpoints den `stage2_config`-Namen als 4. Argument übergeben — der Checkpoint wird dann unter `distil-stage2/<config>/` gesucht:
+
+```bash
+sbatch slurm/eval_rvg1.sh distill_s_large test "" stream_dct_large
+```
+
 #### Batch Evaluation (alle Modelle × ORT/TR2)
 
 ```bash
+# Stage 1
 bash scripts/eval_stage1_all.sh
+
+# Stage 2 (alle Streaming-Configs)
+bash scripts/eval_stage2_all.sh
 ```
 
 #### LaTeX-Tabelle generieren
